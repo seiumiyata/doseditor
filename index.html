@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レトロ風テキストエディタ</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: monospace;
+            background-color: #000;
+            color: #0f0;
+            overflow: hidden;
+        }
+        #editor {
+            width: 100%;
+            height: calc(100% - 30px);
+            box-sizing: border-box;
+            border: none;
+            padding: 10px;
+            resize: none;
+            background-color: #000;
+            color: #0f0;
+            outline: none;
+        }
+        #status {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #000;
+            color: #0f0;
+            padding: 5px;
+            border-top: 1px solid #0f0;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="editor" spellcheck="false"></textarea>
+    <div id="status">未保存 | Ctrl+S: 保存 | Esc: 終了</div>
+
+    <script>
+        class TextEditor {
+            constructor() {
+                this.filename = 'untitled.txt';
+                this.autoSaveInterval = 60000; // 1分ごとに自動保存
+                this.lastSaved = Date.now();
+                this.editor = document.getElementById('editor');
+                this.status = document.getElementById('status');
+
+                this.setupEventListeners();
+                this.adjustFontSize();
+                window.addEventListener('resize', () => this.adjustFontSize());
+
+                // 保存された内容を読み込む
+                const savedContent = localStorage.getItem(this.filename);
+                if (savedContent) {
+                    this.editor.value = savedContent;
+                }
+                this.updateStatus();
+            }
+
+            setupEventListeners() {
+                this.editor.addEventListener('input', () => {
+                    this.checkAutoSave();
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 's') {
+                        e.preventDefault();
+                        this.save();
+                    } else if (e.key === 'Escape') {
+                        if (confirm('エディタを終了しますか？')) {
+                            window.close();
+                        }
+                    }
+                });
+            }
+
+            adjustFontSize() {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                const fontSize = Math.min(width / 80, height / 25); // 80x25の画面を想定
+                document.body.style.fontSize = `${fontSize}px`;
+            }
+
+            checkAutoSave() {
+                const now = Date.now();
+                if (now - this.lastSaved >= this.autoSaveInterval) {
+                    this.save();
+                    this.lastSaved = now;
+                }
+            }
+
+            save() {
+                localStorage.setItem(this.filename, this.editor.value);
+                this.updateStatus('保存しました');
+                setTimeout(() => this.updateStatus(), 2000);
+            }
+
+            updateStatus(message) {
+                this.status.textContent = message || `${this.filename} | Ctrl+S: 保存 | Esc: 終了`;
+            }
+        }
+
+        // エディタの初期化
+        new TextEditor();
+    </script>
+</body>
+</html>
